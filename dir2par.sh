@@ -66,20 +66,30 @@ VERIFY_FILE () {
 	#get the par2 verification filename of the source file
 	local PAR2_FILE=`echo "$FILE" | sed "s@$SRC@$DST@"`/`basename $FILE`.par2
 
-	FILE_STATUS=`par2 verify -B $PARENT_DIR $PAR2_FILE`
+	#make sure PAR2 file exists before trying to verify...
+	if [[ -f $PAR2_FILE ]]; then
+		FILE_STATUS=`par2 verify -B $PARENT_DIR $PAR2_FILE`
 
-	if [[ $FILE_STATUS == *"All files are correct, repair is not required"* ]]; then
-		echo -n "  GOOD"
+		if [[ $FILE_STATUS == *"All files are correct, repair is not required"* ]]; then
+			echo -n "  GOOD"
+			NUM_GOOD=$(( NUM_GOOD + 1 ))
+		else
+			echo "  CORRUPT"
+			NUM_CORRUPT=$(( NUM_CORRUPT + 1 ))
+		fi
 	else
-		echo "  CORRUPT"
-		NUM_CORRUPT=$(( $NUM_CORRUPT + 1 ))
+		echo " - no par2 file available!"
+		NUM_MISSING_PAR2=$(( NUM_MISSING_PAR2 + 1 ))
 	fi
 }
 
 
 NUM_FILE=0
 NUM_FILES=`find $SRC -type f | grep -v ".par2$" | wc -l`
+NUM_GOOD=0
 NUM_CORRUPT=0
+NUM_MISSING_PAR2=0
+NUM_ZERO_FILES=0
 
 IFS=$'\n'
 for FILE in `find $SRC -type f | grep -v ".par2$"`
@@ -92,15 +102,17 @@ do
 	echo -ne $'\r\e[K'
 	echo -n "$PERCENT_FILE% Complete: Processing $FRIENDLY"
 
-	if [[ $OPERATION == "create" ]]; then
-		if [[ -s $FILE ]]; then
-			CREATE_PAR
-		fi
-	fi
-	if [[ $OPERATION == "verify" ]]; then
-		if [[ -s $FILE ]]; then
-			VERIFY_FILE
-		fi
+	if [[ -s $FILE ]]; then
+		case $OPERATION in
+			"create")
+				CREATE_PAR
+				;;
+			"verify")
+				VERIFY_FILE
+				;;
+		esac
+	else
+		NUM_ZERO_FILES=$(( NUM_ZERO_FILES + 1 ))
 	fi
 
 done
@@ -110,9 +122,28 @@ echo
 # iterate through list, prepending the dest directory name before the filepath for the par2 destination option (and create that folder first)
 # ...done?
 if [[ $OPERATION == "verify" ]]; then
-	if [[ $NUM_CORRUPT -eq 0 ]]; then
-		echo "All files checked out OK!"
-	else
+	QUANTIFIER=""
+	echo
+	echo "Out of $NUM_FILES source files:"
+	if [[ $NUM_MISSING_PAR2 -ne 0 ]]; then
+		echo "$NUM_MISSING_PAR2 source files have no par2 files."
+		echo "(When was the last time you ran the \`create\` operation?)"
+		QUANTIFIER=" other"
+	fi
+	echo
+	if [[ $NUM_ZERO_FILES -ne 0 ]]; then
+		echo "$NUM_ZERO_FILES zero-byte files were found in the source directory."
+		QUANTIFIER=" other"
+	fi
+	echo
+	if [[ $NUM_CORRUPT -ne 0 ]]; then
 		echo "$NUM_CORRUPT corrupted files detected :("
 	fi
+	echo
+	if [[ $NUM_GOOD -ne 0 ]]; then
+		echo "All$QUANTIFIER files ($NUM_GOOD) checked out OK!"
+	else
+		echo "No files verified."
+	fi
+
 fi
