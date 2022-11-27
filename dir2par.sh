@@ -112,6 +112,7 @@ do
 				;;
 		esac
 	else
+		echo " - zero-byte file, skipping! (can't protect/verify/repair a file with no data)"
 		NUM_ZERO_FILES=$(( NUM_ZERO_FILES + 1 ))
 	fi
 
