@@ -108,7 +108,7 @@ VERIFY_FILE () {
 
 
 NUM_FILE=0
-NUM_FILES=`find ${SRC} -type f | grep -v ".par2$" | wc -l`
+NUM_FILES=`find "${SRC}" -type f | grep -v ".par2$" | wc -l`
 NUM_GOOD=0
 NUM_CORRUPT=0
 NUM_REPAIRABLE=0
@@ -117,7 +117,7 @@ NUM_MISSING_PAR2=0
 NUM_ZERO_FILES=0
 
 IFS=$'\n'
-for FILE in `find ${SRC} -type f | grep -v ".par2$"`
+for FILE in `find "${SRC}" -type f | grep -v ".par2$"`
 do
 	# FILE is now an absolute path to the source file we need to operate on
 	#count up the files
