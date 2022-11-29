@@ -87,7 +87,17 @@ VERIFY_FILE () {
 			echo -n "  GOOD"
 			NUM_GOOD=$(( NUM_GOOD + 1 ))
 		else
-			echo "  CORRUPT"
+			#corrupt file, determine if repair is possible
+			RECOVERABLE=`echo $FILE_STATUS | grep -o "You have.*Repair is.*possible."`
+			echo "  CORRUPT: $RECOVERABLE"
+
+			if [[ $RECOVERABLE == *"Repair is possible"* ]]; then
+				#provide the user with the command to repair
+				echo "Repair command: par2 repair -B $PARENT_DIR $PAR2_FILE"
+				NUM_REPAIRABLE=$(( NUM_REPAIRABLE + 1 ))
+			else
+				NUM_UNRECOVERABLE=$(( NUM_UNRECOVERABLE + 1 ))
+			fi
 			NUM_CORRUPT=$(( NUM_CORRUPT + 1 ))
 		fi
 	else
@@ -101,6 +111,8 @@ NUM_FILE=0
 NUM_FILES=`find $SRC -type f | grep -v ".par2$" | wc -l`
 NUM_GOOD=0
 NUM_CORRUPT=0
+NUM_REPAIRABLE=0
+NUM_UNRECOVERABLE=0
 NUM_MISSING_PAR2=0
 NUM_ZERO_FILES=0
 
@@ -140,24 +152,25 @@ if [[ $OPERATION == "verify" ]]; then
 	echo
 	echo "Out of $NUM_FILES source files:"
 	if [[ $NUM_MISSING_PAR2 -ne 0 ]]; then
-		echo "$NUM_MISSING_PAR2 source files have no par2 files."
-		echo "(When was the last time you ran the \`create\` operation?)"
+		echo " * $NUM_MISSING_PAR2 source files have no par2 files. (When was the last time you ran the \`create\` operation?)"
 		QUANTIFIER=" other"
 	fi
 	echo
 	if [[ $NUM_ZERO_FILES -ne 0 ]]; then
-		echo "$NUM_ZERO_FILES zero-byte files were found in the source directory."
+		echo " * $NUM_ZERO_FILES zero-byte files were found in the source directory."
 		QUANTIFIER=" other"
 	fi
 	echo
 	if [[ $NUM_CORRUPT -ne 0 ]]; then
-		echo "$NUM_CORRUPT corrupted files detected :("
+		echo " * $NUM_CORRUPT corrupted files detected."
+		echo " **** $NUM_REPAIRABLE are able to be repaired!"
+		echo " **** $NUM_UNRECOVERABLE are unrecoverable :("
 	fi
 	echo
 	if [[ $NUM_GOOD -ne 0 ]]; then
-		echo "All$QUANTIFIER files ($NUM_GOOD) checked out OK!"
+		echo " * All$QUANTIFIER files ($NUM_GOOD) checked out OK!"
 	else
-		echo "No files verified."
+		echo " * No files verified."
 	fi
-
+	echo
 fi
