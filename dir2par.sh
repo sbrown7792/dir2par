@@ -35,7 +35,7 @@ else
 fi
 
 if [[ -d ${2} ]]; then
-	DST=`realpath ${2}`
+	DST=`realpath "${2}"`
 else
 	DST=$2
 	echo "Destination directory $DST does not exist, creating it"
@@ -77,7 +77,7 @@ VERIFY_FILE () {
 	local PARENT_DIR=`dirname ${FILE}`
 
 	#get the par2 verification filename of the source file
-	local PAR2_FILE=`echo "${FILE}" | sed "s@${SRC}@${DST}@"`/`basename ${FILE}`.par2
+	local PAR2_FILE=`echo "${FILE}" | sed "s@${SRC}@${DST}@"`/`basename "${FILE}"`.par2
 
 	#make sure PAR2 file exists before trying to verify...
 	if [[ -f ${PAR2_FILE} ]]; then
