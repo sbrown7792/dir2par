@@ -27,19 +27,19 @@ if [ "$#" -ne 3 ]; then
 	exit
 fi
 
-if [[ -d $1 ]]; then
-	SRC=`realpath $1`
+if [[ -d ${1} ]]; then
+	SRC=`realpath "${1}"`
 else
 	echo "Error! Source directory $1 not found"
 	exit
 fi
 
-if [[ -d $2 ]]; then
-	DST=`realpath $2`
+if [[ -d ${2} ]]; then
+	DST=`realpath ${2}`
 else
 	DST=$2
 	echo "Destination directory $DST does not exist, creating it"
-	mkdir -p $DST
+	mkdir -p ${DST}
 #	echo "Error! Directory $2 not found"
 #	exit
 fi
@@ -61,27 +61,27 @@ fi
 
 CREATE_PAR () {
 	#dynamically calculate block size given the filesize (2%, gives 5 blocks per file, for speed and size efficiency)
-	local BLOCK_SIZE=$(( $(( $(( `ls -al "$FILE" | awk '{ print $5 }'` / 50 )) / 2048 + 1 )) * 2048 ))
+	local BLOCK_SIZE=$(( $(( $(( `ls -al "${FILE}" | awk '{ print $5 }'` / 50 )) / 2048 + 1 )) * 2048 ))
 
 	#perform the par, 10% redundancy, use 512MB of RAM (the default of 16M is stupid slow)
-	par2 create -qq -s$BLOCK_SIZE -r10 -m512 "$FILE" > /dev/null
+	par2 create -qq -s$BLOCK_SIZE -r10 -m512 "${FILE}" > /dev/null
 
 	#get the final destination of the par2 files, and move them there
-	local PAR2FILES_DST=`echo "$FILE" | sed "s@$SRC@$DST@"`
-	mkdir -p "$PAR2FILES_DST"
-	mv "$FILE"*\.par2 "$PAR2FILES_DST"
+	local PAR2FILES_DST=`echo "${FILE}" | sed "s@${SRC}@${DST}@"`
+	mkdir -p "${PAR2FILES_DST}"
+	mv "${FILE}"*\.par2 "${PAR2FILES_DST}"
 }
 
 VERIFY_FILE () {
 	#get the parent directory of the source file
-	local PARENT_DIR=`dirname $FILE`
+	local PARENT_DIR=`dirname ${FILE}`
 
 	#get the par2 verification filename of the source file
-	local PAR2_FILE=`echo "$FILE" | sed "s@$SRC@$DST@"`/`basename $FILE`.par2
+	local PAR2_FILE=`echo "${FILE}" | sed "s@${SRC}@${DST}@"`/`basename ${FILE}`.par2
 
 	#make sure PAR2 file exists before trying to verify...
-	if [[ -f $PAR2_FILE ]]; then
-		FILE_STATUS=`par2 verify -B $PARENT_DIR $PAR2_FILE`
+	if [[ -f ${PAR2_FILE} ]]; then
+		FILE_STATUS=`par2 verify -B ${PARENT_DIR} ${PAR2_FILE}`
 
 		if [[ $FILE_STATUS == *"All files are correct, repair is not required"* ]]; then
 			echo -n "  GOOD"
@@ -93,7 +93,7 @@ VERIFY_FILE () {
 
 			if [[ $RECOVERABLE == *"Repair is possible"* ]]; then
 				#provide the user with the command to repair
-				echo "Repair command: par2 repair -B $PARENT_DIR $PAR2_FILE"
+				echo "Repair command: par2 repair -B ${PARENT_DIR} ${PAR2_FILE}"
 				NUM_REPAIRABLE=$(( NUM_REPAIRABLE + 1 ))
 			else
 				NUM_UNRECOVERABLE=$(( NUM_UNRECOVERABLE + 1 ))
@@ -108,7 +108,7 @@ VERIFY_FILE () {
 
 
 NUM_FILE=0
-NUM_FILES=`find $SRC -type f | grep -v ".par2$" | wc -l`
+NUM_FILES=`find ${SRC} -type f | grep -v ".par2$" | wc -l`
 NUM_GOOD=0
 NUM_CORRUPT=0
 NUM_REPAIRABLE=0
@@ -117,17 +117,17 @@ NUM_MISSING_PAR2=0
 NUM_ZERO_FILES=0
 
 IFS=$'\n'
-for FILE in `find $SRC -type f | grep -v ".par2$"`
+for FILE in `find ${SRC} -type f | grep -v ".par2$"`
 do
 	# FILE is now an absolute path to the source file we need to operate on
 	#count up the files
 	NUM_FILE=$(( $NUM_FILE + 1 ))
 	PERCENT_FILE=$(($(( $NUM_FILE * 100 )) / $NUM_FILES ))
-	FRIENDLY=`echo "$FILE" | awk -F'/' '{ print $NF }'`
+	FRIENDLY=`echo "${FILE}" | awk -F'/' '{ print $NF }'`
 	echo -ne $'\r\e[K'
 	echo -n "$PERCENT_FILE% Complete: Processing $FRIENDLY"
 
-	if [[ -s $FILE ]]; then
+	if [[ -s ${FILE} ]]; then
 		case $OPERATION in
 			"create")
 				CREATE_PAR
