@@ -16,3 +16,5 @@ Where:
 * `OPERATION` is either "create" or "verify" to either create new par2 files (overwriting any existing) or verify source files based on existing par2 files.
 
 If your data is growing, make sure you run "create" every so often to create the par2 files for any new files you've added since running last. But I'd recommend to do a "verify" first, because if a source file is corrupted between the two "create" runs, the second one will create new par2 files based on the corrupted source file. This is an enhancement I'd like to get around to fixing, but as you can tell from my original readme file, it might be awhile. Yes, I have (some) white hair...
+
+If the script detects a corrupt, yet repairable file in the source directory, it will provide the user with the command to repair that file. I still haven't programmed that functionality directly into the script yet. After I let the script bake on my machine for a bit and I feel comfortable about it, that will be next.
