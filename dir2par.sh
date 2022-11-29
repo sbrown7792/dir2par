@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# why am i writing this im so damn tired
-
-#fucking recursion coming right up
-#...maybe
 
 #dir2par.sh SRCDIR DSTDIR OPERATION
 
@@ -13,6 +9,23 @@
 # - create, verify, or repair?
 # - dry-run?
 # - any par2 options
+
+#make sure par2 exists
+DOES_PAR_EXIST=`which par2`
+if [[ -z $DOES_PAR_EXIST ]]; then
+	echo "par2 command not found in PATH. Please install (apt install par2)"
+	exit
+fi
+
+#count arguments, make sure we have three (again, just a stopgap until i figure out getopts)
+if [ "$#" -ne 3 ]; then
+	echo "Script needs exactly three arguments"
+	echo "Please provide exactly the SOURCE_DIR, DEST_DIR, and OPERATION"
+	echo
+	echo "Example: ./dir2par.sh /path/to/source/data/ /path/to/store/par2/files/ create"
+	echo "Example: ./dir2par.sh /path/to/source/data/ /path/to/existing/par2/files/ verify"
+	exit
+fi
 
 if [[ -d $1 ]]; then
 	SRC=`realpath $1`
